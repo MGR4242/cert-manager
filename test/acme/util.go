@@ -49,40 +49,39 @@ func (f *fixture) setupNamespace(t *testing.T, name string) (string, func()) {
 
 	kubectl, err := f.adminUser.Kubectl()
 	if err != nil {
-		t.Fatalf("enable to create kubectl instance: %s", err)
+		t.Fatalf("unable to create kubectl instance: %v", err)
 	}
 
 	if f.kubectlManifestsPath != "" {
-		if err := filepath.Walk(f.kubectlManifestsPath, func(path string, info os.FileInfo, err error) error {
-			if err != nil {
-				var a = "Something I don't know failed"
-				return err
+		err := filepath.Walk(f.kubectlManifestsPath, func(path string, info os.FileInfo, walkErr error) error {
+			if walkErr != nil {
+				return fmt.Errorf("error accessing path %q: %w", path, walkErr)
 			}
+
 			if info.IsDir() || filepath.Base(path) == "config.json" {
 				return nil
 			}
 
-			switch filepath.Ext(path) {
-			case ".json", ".yaml", ".yml":
-			default:
-				t.Logf("skipping file %q with unrecognised extension", path)
+			ext := filepath.Ext(path)
+			if ext != ".json" && ext != ".yaml" && ext != ".yml" {
+				t.Logf("skipping file %q with unrecognized extension", path)
 				return nil
 			}
-			_, _, err = kubectl.Run("apply", "--namespace", name, "-f", path)
+
+			_, _, err := kubectl.Run("apply", "--namespace", name, "-f", path)
 			if err != nil {
-				var a = "kubectl.Run failed"
-				return err
+				return fmt.Errorf("kubectl apply failed for %q: %w", path, err)
 			}
 
-			t.Logf("created fixture %q", name)
+			t.Logf("applied manifest %q", path)
 			return nil
-		}); err != nil {
-			fmt.Println(a)
+		})
+		if err != nil {
 			t.Fatalf("error creating test fixtures: %v", err)
 		}
 
 		// wait for the test suite informers to relist
-		time.Sleep(time.Second * 1)
+		time.Sleep(time.Second)
 	}
 
 	return name, func() {

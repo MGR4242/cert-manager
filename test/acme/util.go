@@ -68,9 +68,11 @@ func (f *fixture) setupNamespace(t *testing.T, name string) (string, func()) {
 				return nil
 			}
 
-			_, _, err := kubectl.Run("apply", "--namespace", name, "-f", path)
+			out, errOut, err := kubectl.Run("apply", "--namespace", name, "-f", path)
 			if err != nil {
-				return fmt.Errorf("kubectl apply failed for %q: %w", path, err)
+				t.Logf("kubectl apply stdout:\n%s", out)
+    			t.Logf("kubectl apply stderr:\n%s", errOut)
+    			return fmt.Errorf("kubectl apply failed for %q: %w", path, err)
 			}
 
 			t.Logf("applied manifest %q", path)

@@ -55,7 +55,7 @@ func (f *fixture) setupNamespace(t *testing.T, name string) (string, func()) {
 	if f.kubectlManifestsPath != "" {
 		if err := filepath.Walk(f.kubectlManifestsPath, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
-				fmt.Println("I do not know what this is")
+				var a = "Something I don't know failed"
 				return err
 			}
 			if info.IsDir() || filepath.Base(path) == "config.json" {
@@ -70,13 +70,14 @@ func (f *fixture) setupNamespace(t *testing.T, name string) (string, func()) {
 			}
 			_, _, err = kubectl.Run("apply", "--namespace", name, "-f", path)
 			if err != nil {
-				fmt.Println("kubectl.Run failed")
+				var a = "kubectl.Run failed"
 				return err
 			}
 
 			t.Logf("created fixture %q", name)
 			return nil
 		}); err != nil {
+			fmt.Println(a)
 			t.Fatalf("error creating test fixtures: %v", err)
 		}
 
